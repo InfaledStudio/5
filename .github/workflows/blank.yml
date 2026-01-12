@@ -1,0 +1,49 @@
+name: Kali Linux Web VNC
+
+on:
+  workflow_dispatch:
+
+jobs:
+  kali:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+    - name: Update
+      run: sudo apt update
+
+    - name: Install desktop + VNC
+      run: |
+        sudo apt install -y xfce4 xfce4-goodies tightvncserver dbus-x11 novnc websockify
+
+    - name: Create user
+      run: |
+        sudo useradd -m kali
+        echo "kali:kali" | sudo chpasswd
+        sudo adduser kali sudo
+
+    - name: Setup VNC
+      run: |
+        sudo -u kali mkdir -p /home/kali/.vnc
+        echo -e "kali\nkali\n" | sudo -u kali vncpasswd
+        echo '#!/bin/sh
+        unset SESSION_MANAGER
+        unset DBUS_SESSION_BUS_ADDRESS
+        exec startxfce4 &' | sudo tee /home/kali/.vnc/xstartup
+        sudo chmod +x /home/kali/.vnc/xstartup
+
+    - name: Start VNC
+      run: sudo -u kali vncserver :1 -geometry 1280x720
+
+    - name: Start noVNC
+      run: |
+        websockify --web=/usr/share/novnc/ 6080 localhost:5901 &
+
+    - name: Install Cloudflared
+      run: |
+        wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64
+        sudo mv cloudflared-linux-amd64 /usr/local/bin/cloudflared
+        sudo chmod +x /usr/local/bin/cloudflared
+
+    - name: Expose Web VNC
+      run: cloudflared tunnel --url http://localhost:6080
