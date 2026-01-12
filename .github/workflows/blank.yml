@@ -25,7 +25,7 @@ jobs:
     - name: Setup VNC
       run: |
         sudo -u kali mkdir -p /home/kali/.vnc
-        echo -e "kali\nkali\n" | sudo -u kali vncpasswd
+        echo -e "kali123\nkali123\n" | sudo -u kali vncpasswd
         echo '#!/bin/sh
         unset SESSION_MANAGER
         unset DBUS_SESSION_BUS_ADDRESS
